@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de comidas semanal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14171C;
+    --surface:#1C2129;
+    --surface-2:#232933;
+    --border:#2A313C;
+    --text:#F2EFEA;
+    --text-dim:#97A1AC;
+    --text-faint:#5E6874;
+    --gold:#F2A93B;
+    --gold-dim:#8A6425;
+    --teal:#34C4B0;
+    --teal-dim:#1E7267;
+    --coral:#FF6F59;
+    --coral-dim:#8E3E32;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 64px;}
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:30px;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{color:var(--text-dim);font-size:14px;margin:0 0 28px;}
+
+  .goal-band{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px 20px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .goal-band .label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;}
+  .goal-band .value{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--gold);}
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    padding-bottom:8px;
+    margin-bottom:20px;
+    -ms-overflow-style:none;
+    scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:0 0 auto;
+    padding:10px 16px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text-dim);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.15s, color 0.15s, border-color 0.15s;
+    white-space:nowrap;
+  }
+  .tab:hover{border-color:var(--text-faint);color:var(--text);}
+  .tab.active{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#231703;
+  }
+  .tab:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+
+  .gauge-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:20px 22px;
+    margin-bottom:22px;
+  }
+  .gauge-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .gauge-top .day-name{
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    font-weight:600;
+  }
+  .gauge-top .kcal-readout{
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;
+    font-weight:700;
+  }
+  .gauge-top .kcal-readout .of{
+    color:var(--text-faint);
+    font-size:14px;
+    font-weight:400;
+  }
+  .gauge-track{
+    position:relative;
+    height:14px;
+    border-radius:7px;
+    background:var(--surface-2);
+    overflow:hidden;
+    margin-bottom:10px;
+  }
+  .gauge-target-zone{
+    position:absolute;
+    top:0;bottom:0;
+    background:rgba(52,196,176,0.18);
+    border-left:1px dashed var(--teal);
+    border-right:1px dashed var(--teal);
+  }
+  .gauge-fill{
+    position:absolute;
+    top:0;bottom:0;left:0;
+    background:var(--gold);
+    border-radius:7px;
+    transition:width 0.3s ease;
+  }
+  .gauge-legend{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    color:var(--text-faint);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .stat-row{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+  .stat-pill{
+    background:var(--surface-2);
+    border-radius:10px;
+    padding:8px 14px;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .stat-pill b{
+    font-family:'JetBrains Mono',monospace;
+    color:var(--text);
+    font-size:13px;
+    display:block;
+  }
+
+  .timeline{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .meal{
+    display:flex;
+    gap:14px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px 18px;
+    align-items:flex-start;
+  }
+  .meal.done{opacity:0.5;}
+  .meal-time{
+    flex:0 0 64px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--text-faint);
+    padding-top:2px;
+  }
+  .meal-check{
+    flex:0 0 auto;
+    width:22px;height:22px;
+    border-radius:6px;
+    border:1.5px solid var(--text-faint);
+    background:transparent;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--gold);
+    font-size:14px;
+    padding:0;
+    margin-top:1px;
+  }
+  .meal-check.checked{background:var(--gold);border-color:var(--gold);color:#231703;}
+  .meal-check:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .meal-body{flex:1;min-width:0;}
+  .meal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+    flex-wrap:wrap;
+  }
+  .meal-title{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:16px;
+  }
+  .meal-title.done{text-decoration:line-through;text-decoration-color:var(--text-faint);}
+  .meal-tag{
+    font-size:11px;
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:999px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .meal-tag.casa{background:rgba(255,111,89,0.16);color:var(--coral);}
+  .meal-tag.trabajo{background:rgba(52,196,176,0.16);color:var(--teal);}
+  .meal-items{
+    list-style:none;
+    padding:0;margin:0 0 8px;
+    color:var(--text-dim);
+    font-size:13.5px;
+    line-height:1.7;
+  }
+  .meal-items li::before{content:"– ";color:var(--text-faint);}
+  .meal-foot{
+    display:flex;
+    gap:14px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--text-faint);
+  }
+  .meal-foot .kcal{color:var(--gold);font-weight:700;}
+
+  .home-work-summary{
+    display:flex;
+    gap:10px;
+    margin-top:22px;
+  }
+  .hw-card{
+    flex:1;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 16px;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .hw-card b{display:block;font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--text);margin-top:2px;}
+
+  .footnote{
+    margin-top:28px;
+    font-size:11.5px;
+    color:var(--text-faint);
+    line-height:1.6;
+    border-top:1px solid var(--border);
+    padding-top:16px;
+  }
+
+  @media (max-width:520px){
+    .meal{flex-direction:column;}
+    .meal-time{flex:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Plan de comidas semanal</h1>
+  <p class="subtitle">Objetivo: ganar peso comiendo entre 2700 y 3000 kcal cada día, en 6 comidas distribuidas por horario.</p>
+
+  <div class="goal-band">
+    <div>
+      <div class="label">Meta diaria</div>
+      <div class="value">2700 – 3000 kcal</div>
+    </div>
+    <div>
+      <div class="label">Comidas por día</div>
+      <div class="value" style="color:var(--teal);">6</div>
+    </div>
+    <div>
+      <div class="label">Proteína aprox. / día</div>
+      <div class="value" style="color:var(--coral);" id="protein-readout">–</div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="gauge-card">
+    <div class="gauge-top">
+      <span class="day-name" id="day-name"></span>
+      <span class="kcal-readout"><span id="kcal-current">0</span><span class="of"> / 2700–3000 kcal</span></span>
+    </div>
+    <div class="gauge-track">
+      <div class="gauge-target-zone" style="left:75%;width:25%;"></div>
+      <div class="gauge-fill" id="gauge-fill" style="width:0%;"></div>
+    </div>
+    <div class="gauge-legend">
+      <span>0</span>
+      <span style="color:var(--teal);">zona meta →</span>
+      <span>3600</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat-pill">Comidas marcadas<b id="meals-done">0 / 6</b></div>
+      <div class="stat-pill">En casa 🏠<b id="home-count">0</b></div>
+      <div class="stat-pill">En trabajo 💼<b id="work-count">0</b></div>
+    </div>
+  </div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <p class="footnote">
+    Valores de kcal y proteína son aproximados según porciones caseras estándar — ajústalos si usas marcas o balanza específicas. El check de cada comida se guarda automáticamente para que puedas retomar tu progreso del día.
+  </p>
+</div>
+
+<script>
+const weekData = [
+  { day: "Lunes", protein: 208, meals: [
+    { time:"8:30 am", title:"Desayuno", loc:"casa", kcal:570, items:["3 huevos revueltos","1 arepa mediana","1 plátano maduro asado","Café con leche"] },
+    { time:"11:00 am", title:"Media mañana", loc:"trabajo", kcal:430, items:["1 yogurt griego natural (170g)","30g de almendras","1 plátano"] },
+    { time:"1:30 pm", title:"Almuerzo", loc:"trabajo", kcal:692, items:["Pechuga de pollo 150g","1 taza de arroz blanco","1/2 aguacate","Ensalada con 1 cda de aceite de oliva"] },
+    { time:"4:30 pm", title:"Media tarde", loc:"trabajo", kcal:380, items:["Sándwich de atún: 1 lata de atún + 2 tajadas de pan integral","30g de queso"] },
+    { time:"7:30 pm", title:"Cena", loc:"casa", kcal:563, items:["Pechuga de pollo 120g","150g de papa cocida","1/2 taza de lentejas","1 cda de aceite de oliva"] },
+    { time:"9:30 pm", title:"Antes de dormir", loc:"casa", kcal:360, items:["Batido: 1 taza de leche entera + 30g de avena + 1 cda de mantequilla de maní"] }
+  ]},
+  { day: "Martes", protein: 195, meals: [
+    { time:"8:30 am", title:"Desayuno", loc:"casa", kcal:587, items:["50g de avena cocida en 1 taza de leche","2 huevos","1 plátano"] },
+    { time:"11:00 am", title:"Media mañana", loc:"trabajo", kcal:455, items:["Sándwich de maní: 2 tajadas de pan integral + 2 cdas de mantequilla de maní","1 plátano"] },
+    { time:"1:30 pm", title:"Almuerzo", loc:"trabajo", kcal:735, items:["1 taza de arroz blanco","1 taza de fríjoles","Pechuga de pollo 100g","1/2 aguacate"] },
+    { time:"4:30 pm", title:"Media tarde", loc:"trabajo", kcal:265, items:["1 yogurt griego natural","20g de almendras"] },
+    { time:"7:30 pm", title:"Cena", loc:"casa", kcal:515, items:["1 lata de atún","200g de papa cocida","Ensalada con 1 cda de aceite","30g de queso"] },
+    { time:"9:30 pm", title:"Antes de dormir", loc:"casa", kcal:320, items:["1 taza de leche + 30g de avena + 1/2 plátano"] }
+  ]},
+  { day: "Miércoles", protein: 215, meals: [
+    { time:"8:30 am", title:"Desayuno", loc:"casa", kcal:565, items:["3 huevos","1 arepa mediana","30g de queso","Café con leche"] },
+    { time:"11:00 am", title:"Media mañana", loc:"trabajo", kcal:375, items:["Batido de proteína: 1 taza de leche + 1 scoop de proteína + 1 plátano"] },
+    { time:"1:30 pm", title:"Almuerzo", loc:"trabajo", kcal:687, items:["Pechuga de pollo 150g","1 taza de arroz","1/2 taza de lentejas","1 cda de aceite de oliva"] },
+    { time:"4:30 pm", title:"Media tarde", loc:"trabajo", kcal:360, items:["2 tajadas de pan integral","1 cda de mantequilla de maní","1 plátano"] },
+    { time:"7:30 pm", title:"Cena", loc:"casa", kcal:500, items:["1 lata de atún","150g de papa cocida","1/2 aguacate","30g de queso"] },
+    { time:"9:30 pm", title:"Antes de dormir", loc:"casa", kcal:325, items:["1 yogurt griego natural","30g de almendras"] }
+  ]},
+  { day: "Jueves", protein: 200, meals: [
+    { time:"8:30 am", title:"Desayuno", loc:"casa", kcal:577, items:["50g de avena cocida en leche","2 huevos","1 cda de mantequilla de maní"] },
+    { time:"11:00 am", title:"Media mañana", loc:"trabajo", kcal:370, items:["1 yogurt griego natural","1 plátano","20g de almendras"] },
+    { time:"1:30 pm", title:"Almuerzo", loc:"trabajo", kcal:694, items:["1 taza de arroz","Pechuga de pollo 150g","1/2 taza de fríjoles","1/2 aguacate"] },
+    { time:"4:30 pm", title:"Media tarde", loc:"trabajo", kcal:320, items:["2 tajadas de pan integral","1/2 lata de atún","30g de queso"] },
+    { time:"7:30 pm", title:"Cena", loc:"casa", kcal:493, items:["Pechuga de pollo 120g","200g de papa cocida","Ensalada con aceite de oliva"] },
+    { time:"9:30 pm", title:"Antes de dormir", loc:"casa", kcal:370, items:["1 taza de leche + 30g de avena + 1 plátano"] }
+  ]},
+  { day: "Viernes", protein: 210, meals: [
+    { time:"8:30 am", title:"Desayuno", loc:"casa", kcal:570, items:["3 huevos","1 arepa mediana","1 plátano","Café con leche"] },
+    { time:"11:00 am", title:"Media mañana", loc:"trabajo", kcal:350, items:["Sándwich de maní: 2 tajadas de pan integral + 2 cdas de mantequilla de maní"] },
+    { time:"1:30 pm", title:"Almuerzo", loc:"trabajo", kcal:665, items:["1 taza de arroz","1 lata de atún","1/2 aguacate","Ensalada con aceite","30g de queso"] },
+    { time:"4:30 pm", title:"Media tarde", loc:"trabajo", kcal:325, items:["1 yogurt griego natural","30g de almendras"] },
+    { time:"7:30 pm", title:"Cena", loc:"casa", kcal:612, items:["Pechuga de pollo 150g","150g de papa cocida","1/2 taza de lentejas","1 cda de aceite de oliva"] },
+    { time:"9:30 pm", title:"Antes de dormir", loc:"casa", kcal:370, items:["1 taza de leche + 30g de avena + 1 plátano"] }
+  ]},
+  { day: "Sábado", protein: 190, meals: [
+    { time:"9:00 am", title:"Desayuno", loc:"casa", kcal:587, items:["50g de avena cocida en leche","2 huevos","1 plátano"] },
+    { time:"11:30 am", title:"Media mañana", loc:"casa", kcal:325, items:["1 yogurt griego natural","30g de almendras"] },
+    { time:"2:00 pm", title:"Almuerzo", loc:"casa", kcal:694, items:["Pechuga de pollo 150g","1 taza de arroz","1/2 taza de fríjoles","1/2 aguacate"] },
+    { time:"4:30 pm", title:"Media tarde", loc:"casa", kcal:360, items:["2 tajadas de pan integral","1 cda de mantequilla de maní","1 plátano"] },
+    { time:"7:30 pm", title:"Cena", loc:"casa", kcal:493, items:["Pechuga de pollo 120g","200g de papa cocida","Ensalada con aceite de oliva"] },
+    { time:"9:30 pm", title:"Antes de dormir", loc:"casa", kcal:370, items:["1 taza de leche + 30g de avena + 1 plátano"] }
+  ]},
+  { day: "Domingo", protein: 205, meals: [
+    { time:"9:00 am", title:"Desayuno", loc:"casa", kcal:565, items:["3 huevos","1 arepa mediana","30g de queso","Café con leche"] },
+    { time:"11:30 am", title:"Media mañana", loc:"casa", kcal:375, items:["Batido: 1 taza de leche + 1 scoop de proteína + 1 plátano"] },
+    { time:"2:00 pm", title:"Almuerzo", loc:"casa", kcal:687, items:["Pechuga de pollo 150g","1 taza de arroz","1/2 taza de lentejas","1/2 aguacate"] },
+    { time:"4:30 pm", title:"Media tarde", loc:"casa", kcal:325, items:["1 yogurt griego natural","30g de almendras"] },
+    { time:"7:30 pm", title:"Cena", loc:"casa", kcal:470, items:["1 lata de atún","150g de papa cocida","Ensalada con aceite","30g de queso"] },
+    { time:"9:30 pm", title:"Antes de dormir", loc:"casa", kcal:370, items:["1 taza de leche + 30g de avena + 1 plátano"] }
+  ]}
+];
+
+let currentDay = 0;
+let checkedState = {};
+
+async function loadState(){
+  try{
+    const res = await window.storage.get('meal-checks');
+    if(res && res.value) checkedState = JSON.parse(res.value);
+  }catch(e){ checkedState = {}; }
+  try{
+    const dayRes = await window.storage.get('meal-current-day');
+    if(dayRes && dayRes.value !== undefined){
+      const d = parseInt(dayRes.value, 10);
+      if(!isNaN(d) && d >= 0 && d < weekData.length) currentDay = d;
+    }
+  }catch(e){}
+}
+
+async function saveChecks(){
+  try{ await window.storage.set('meal-checks', JSON.stringify(checkedState)); }catch(e){}
+}
+async function saveCurrentDay(){
+  try{ await window.storage.set('meal-current-day', String(currentDay)); }catch(e){}
+}
+
+function renderTabs(){
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = '';
+  weekData.forEach((d, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (i === currentDay ? ' active' : '');
+    btn.textContent = d.day.slice(0,3);
+    btn.setAttribute('aria-label', d.day);
+    btn.onclick = () => { currentDay = i; saveCurrentDay(); renderAll(); };
+    tabsEl.appendChild(btn);
+  });
+}
+
+function renderDay(){
+  const data = weekData[currentDay];
+  document.getElementById('day-name').textContent = data.day;
+  document.getElementById('protein-readout').textContent = '~' + data.protein + ' g';
+
+  let total = 0, doneCount = 0, homeCount = 0, workCount = 0;
+  const timeline = document.getElementById('timeline');
+  timeline.innerHTML = '';
+
+  data.meals.forEach((m, idx) => {
+    const key = currentDay + '-' + idx;
+    const isChecked = !!checkedState[key];
+    if(isChecked){ total += m.kcal; doneCount++; }
+    if(m.loc === 'casa') homeCount++; else workCount++;
+
+    const row = document.createElement('div');
+    row.className = 'meal' + (isChecked ? ' done' : '');
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'meal-time';
+    timeEl.textContent = m.time;
+
+    const checkBtn = document.createElement('button');
+    checkBtn.className = 'meal-check' + (isChecked ? ' checked' : '');
+    checkBtn.innerHTML = isChecked ? '&#10003;' : '';
+    checkBtn.setAttribute('aria-label', isChecked ? 'Marcar como no consumida' : 'Marcar como consumida');
+    checkBtn.onclick = () => {
+      checkedState[key] = !checkedState[key];
+      saveChecks();
+      renderDay();
+    };
+
+    const body = document.createElement('div');
+    body.className = 'meal-body';
+
+    const head = document.createElement('div');
+    head.className = 'meal-head';
+    const titleEl = document.createElement('span');
+    titleEl.className = 'meal-title' + (isChecked ? ' done' : '');
+    titleEl.textContent = m.title;
+    const tagEl = document.createElement('span');
+    tagEl.className = 'meal-tag ' + m.loc;
+    tagEl.textContent = m.loc === 'casa' ? 'Casa' : 'Trabajo';
+    head.appendChild(titleEl);
+    head.appendChild(tagEl);
+
+    const ul = document.createElement('ul');
+    ul.className = 'meal-items';
+    m.items.forEach(it => {
+      const li = document.createElement('li');
+      li.textContent = it;
+      ul.appendChild(li);
+    });
+
+    const foot = document.createElement('div');
+    foot.className = 'meal-foot';
+    foot.innerHTML = '<span class="kcal">' + m.kcal + ' kcal</span>';
+
+    body.appendChild(head);
+    body.appendChild(ul);
+    body.appendChild(foot);
+
+    row.appendChild(timeEl);
+    row.appendChild(checkBtn);
+    row.appendChild(body);
+    timeline.appendChild(row);
+  });
+
+  document.getElementById('kcal-current').textContent = total;
+  document.getElementById('meals-done').textContent = doneCount + ' / ' + data.meals.length;
+  document.getElementById('home-count').textContent = homeCount;
+  document.getElementById('work-count').textContent = workCount;
+
+  const pct = Math.min(100, (total / 3600) * 100);
+  document.getElementById('gauge-fill').style.width = pct + '%';
+}
+
+function renderAll(){
+  renderTabs();
+  renderDay();
+}
+
+loadState().then(renderAll);
+</script>
+</body>
+</html>
